@@ -1,0 +1,23 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Part 2
+{% endblock %}
+
+{% block content %}
+    <p>You will now play {{Constants.num_rounds}} rounds. The points you earn in these rounds will contribute to your final payment.</p>
+    <p>We will show you the results of your decisions at the end of the experiment, only after you have completed all the rounds in all the tasks.</p>
+{% next_button %}
+{% endblock %}
+
+
+{% block styles %}
+    <style>
+        input, body {
+          font-family: 'Helvetica', Arial, Lucida Grande, sans-serif;
+          font-size: 14px;
+        }
+    </style>
+{% endblock %}
+

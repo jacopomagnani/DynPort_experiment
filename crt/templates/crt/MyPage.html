@@ -1,0 +1,38 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Page title
+{% endblock %}
+
+{% block content %}
+
+    <p>
+    In this page, you are asked to answer <b>three questions</b>.
+    You will receive <b>2 points for each correct answer</b>.
+    After you have submitted your answers, you will see the correct answers and the amount of points you have earned.
+    </p>
+    <p>
+        Please answer the following questions.
+    </p>
+    <br />
+    <p>
+        1. If you’re running a race and you pass the person in second place, what place are you in?
+        {% formfield player.answer1 label="Your answer (enter a <b>number</b>)"%}
+    </p>
+    <br />
+    <p>
+        2. A man buys a pig for $60, sells it for 70 Dollars, buys it back for 80 Dollars, and sells it finally for 90 Dollars.
+        How much has he made?
+        {% formfield player.answer2 label="Your answer (in <b>Dollars</b>)"%}
+    </p>
+    <br />
+    <p>
+        3. If John can drink one barrel of water in 6 days, and Mary can drink one barrel of water in 12 days, how long would it take them to drink one barrel of water together?
+       {% formfield player.answer3 label="Your answer (in <b>days</b>)"%}
+    </p>
+    <br />
+
+    {% next_button %}
+
+{% endblock %}

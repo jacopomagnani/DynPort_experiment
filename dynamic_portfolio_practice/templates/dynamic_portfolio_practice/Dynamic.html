@@ -1,0 +1,300 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Practice Round {{ subsession.round_number }}
+{% endblock %}
+
+{% block content %}
+    <p>Choose how much wealth to invest in A.</p>
+
+    <div id="chart" align="center"></div>
+
+    {% next_button %}
+    <input type="hidden" name="dyn_stock" id="id_stock"/>
+    {{ form.dyn_stock.errors }}
+    <input type="hidden" name="dyn_bond" id="id_bond"/>
+    {{ form.dyn_bond.errors }}
+    <input type="hidden" name="dyn_wealth" id="id_wealth"/>
+    {{ form.dyn_wealth.errors }}
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script>
+
+        d3.select("#chart")
+            .attr("align","center");
+
+
+        var T = {{subsession.num_periods|json}};
+        var num_periods = T+1;
+        var num_termnodes = 2**T;
+        var horizontal_margin = 20;
+        var vertical_margin = 20;
+        var box_width = 180;
+        var box_height = 70;
+        var termbox_width = 105;
+        var termbox_height = 62;
+        var box_horizontal_space = 100;
+        var termbox_vertical_space = 25;
+        var targetX, targetY;
+        var wealth_label;
+
+        var total_width = 2*horizontal_margin + T * (box_width + box_horizontal_space) + termbox_width;
+        var total_height = 2*vertical_margin + num_termnodes * (termbox_height+termbox_vertical_space);
+        var svgContainer = d3.select("#chart").append("svg").attr("width",total_width).attr("height",total_height);
+
+        var prices = JSON.parse({{subsession.dyn_prices|json}});
+
+        <!--DEFINING ARROW MARKERS-->
+
+        svgContainer.append("svg:defs").append("svg:marker")
+            .attr("id", "triangle")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "black");
+
+        <!--TERMINAL NODES-->
+        targetX = horizontal_margin + (box_width + box_horizontal_space)*T;
+
+        for(i=1; i<num_termnodes+1; i++){
+
+            targetY = vertical_margin + (i-1)*(termbox_height+termbox_vertical_space);
+            wealth_label = "w_" + T + "_" + i;
+            price_label = "x_" + T + "_" + i;
+
+            svgContainer.append("rect")
+                .attr("x",targetX)
+                .attr("y",targetY)
+                .attr("width",termbox_width)
+                .attr("height",termbox_height)
+                .attr("ry",5)
+                .style("fill","white")
+                .style("stroke","black")
+                .style("stroke-width",1);
+
+            var fo = svgContainer.append("foreignObject")
+                .attr("x",targetX+1)
+                .attr("y",targetY+1)
+                .attr("width",termbox_width-5)
+                .attr("height",termbox_height-5);
+
+            var tab = fo.append("xhtml:table");
+            var row1 = tab.append("tr");
+            row1.append("td").html("Price_A: ");
+            row1.append("td").append("xhtml:input")
+                .attr("size",3)
+                .attr("value",prices[price_label])
+                .attr("readonly","readonly");
+            var row2 = tab.append("tr");
+            row2.append("td").html("Wealth: ");
+            row2.append("td").append("xhtml:input")
+                .attr("size",3)
+                .attr("id",wealth_label)
+                .attr("class","wealth")
+                .attr("type","number");
+        }
+
+        <!--NON-TERMINAL NODES-->
+
+        for(k=1; k<T+1; k++){
+
+            var num_nodes = 2**(T-k);
+
+            var top_offset = vertical_margin + 2**(k-1) * (termbox_height + termbox_vertical_space) - (box_height + termbox_vertical_space)/2;
+            var box_vertical_distance = 2**k * (termbox_height+termbox_vertical_space)-box_height;
+
+            targetX = horizontal_margin + (box_width + box_horizontal_space)*(T-k);
+
+            for(i=1; i<num_nodes+1; i++){
+
+                wealth_label = "w_" + (T-k) + "_" + i;
+                stock_label = "s_" + (T-k) + "_" + i;
+                bond_label = "b_" + (T-k) + "_" + i;
+                price_label = "x_" + (T-k) + "_" + i;
+
+                targetY = top_offset + (i-1) * (box_height + box_vertical_distance);
+
+                svgContainer.append("rect")
+                    .attr("x",targetX)
+                    .attr("y",targetY)
+                    .attr("width",box_width)
+                    .attr("height",box_height)
+                    .attr("ry",5)
+                    .style("fill","white")
+                    .style("stroke","black")
+                    .style("stroke-width",1);
+
+                var fo = svgContainer.append("foreignObject")
+                    .attr("x",targetX+1)
+                    .attr("y",targetY+5)
+                    .attr("width",box_width-5)
+                    .attr("height",box_height-5);
+                var tab = fo.append("xhtml:table");
+                var row1 = tab.append("tr");
+                row1.append("td").html("Price_A: ");
+                row1.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("value",prices[price_label])
+                    .attr("readonly","readonly");
+                row1.append("td").html("A: ");
+                row1.append("td").append("xhtml:input")
+                    .attr("size",1)
+                    .attr("id",stock_label)
+                    .attr("type","number")
+                    .attr("step","1")
+                    .attr("required","required");
+                var row2 = tab.append("tr");
+                row2.append("td").html("Wealth:");
+                row2.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",wealth_label)
+                    .attr("class","wealth")
+                    .attr("type","number");
+                row2.append("td").html("B: ");
+                row2.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",bond_label)
+                    .attr("readonly","readonly");
+
+                var line_start_X = targetX + box_width;
+                var line_start_Y = targetY + 0.5 * box_height;
+                var line_end_X = line_start_X + box_horizontal_space - 5;
+                if(k==1){
+                    var upline_end_Y = line_start_Y - 0.5 * (termbox_height + termbox_vertical_space);
+                    var downline_end_Y = line_start_Y + 0.5 * (termbox_height + termbox_vertical_space);
+                } else {
+                    var nextbox_vertical_distance = 2**(k-1) * (termbox_height+termbox_vertical_space)-box_height;
+                    var upline_end_Y = line_start_Y - 0.5 * (box_height + nextbox_vertical_distance);
+                    var downline_end_Y = line_start_Y + 0.5 * (box_height + nextbox_vertical_distance);
+                };
+                svgContainer.append("line")
+                    .attr("x1",line_start_X)
+                    .attr("y1",line_start_Y)
+                    .attr("x2",line_end_X)
+                    .attr("y2",upline_end_Y)
+                    .attr("stroke-width", 1)
+                    .attr("stroke", "black")
+                    .attr("marker-end", "url(#triangle)");
+                svgContainer.append("line")
+                    .attr("x1",line_start_X)
+                    .attr("y1",line_start_Y)
+                    .attr("x2",line_end_X)
+                    .attr("y2",downline_end_Y)
+                    .attr("stroke-width", 1)
+                    .attr("stroke", "black")
+                    .attr("marker-end", "url(#triangle)");
+
+            };
+
+        };
+
+    </script>
+
+    <script>
+    $("#w_0_1").val({{subsession.initial_wealth}});
+
+    </script>
+
+    <script>
+    $("input").on("keydown keyup", function() {
+        var error = 0;
+        var wealth_string = "{ ";
+        var stock_string = "{ ";
+        var bond_string = "{ ";
+        for (t=0; t<T+1; t++){
+            for (i=1; i<2**t+1;i++){
+                if(t==0){
+                    current_w_id = "#w_0_1";
+                    current_w = {{subsession.initial_wealth|json}};
+                } else {
+                    var prev_node_index = Math.floor((i+1)/2);
+                    var prev_s_id = "#s_" + (t-1) + "_" + prev_node_index;
+                    var prev_b_id = "#b_" + (t-1) + "_" + prev_node_index;
+                    var prev_s =  parseInt($(prev_s_id).val());
+                    var prev_b =  parseInt($(prev_b_id).val());
+                    var up_dummy = i % 2 ;
+                    var current_w = (up_dummy * {{Constants.up_tick}} + (1 - up_dummy) * {{Constants.down_tick}}) * prev_s + prev_b;
+                    current_w = Math.round(current_w);
+                    if(!isNaN(current_w)) {
+                        var current_w_id = "#w_" + t + "_" + i;
+                        $(current_w_id).val(current_w);
+                    };
+                };
+                if(t <T){
+                    var current_s_id = "#s_" + t + "_" + i;
+                    var current_s = parseInt($(current_s_id).val());
+                    var current_b_id = "#b_" + t + "_" + i;
+                    var current_b = current_w - current_s;
+                    if(!isNaN(current_b)){
+                        $(current_b_id).val(current_b);
+                    };
+                    stock_string = stock_string + '"' + current_s_id.substr(1) + '":' + current_s;
+                    bond_string = bond_string + '"' + current_b_id.substr(1) + '":' + current_b;
+                    if(i<2**(T-1)){
+                        stock_string = stock_string + ', ';
+                        bond_string = bond_string + ', ';
+                    };
+                };
+                if(current_w<0 && error==0){
+                    $(current_w_id).attr("min",0);
+                    error = 1
+                } else {
+                    $(current_w_id).removeAttr("min");
+                };
+                wealth_string = wealth_string + '"' + current_w_id.substr(1) + '":' + current_w;
+                if(i<2**T){
+                    wealth_string = wealth_string + ', ';
+                };
+            };
+        };
+        stock_string = stock_string + "}";
+        $("#id_stock").val(stock_string);
+        bond_string = bond_string + "}";
+        $("#id_bond").val(bond_string);
+        wealth_string = wealth_string + "}";
+        $("#id_wealth").val(wealth_string);
+    });
+    </script>
+
+    <script>
+        $(".wealth").on('keydown paste', function(e){
+            e.preventDefault();
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+        $(window).keydown(function(event){
+        if(event.keyCode == 13) {
+          event.preventDefault();
+          return false;
+        }
+        });
+        });
+    </script>
+
+{% endblock %}
+
+{% block styles %}
+    <style>
+        input, body {
+          font-family: 'Helvetica', Arial, Lucida Grande, sans-serif;
+          font-size: 14px;
+        }
+        input{
+            width: 40px;
+        }
+    </style>
+{% endblock %}
+

@@ -1,0 +1,16 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Page title
+{% endblock %}
+
+{% block content %}
+    <p>
+    In this page, you are asked to provide some information about yourself (your sex and your undergraduate major).
+    Your responses are completely confidential and anonymous.
+    </p>
+    {% formfield player.sex label="Your sex" %}
+    {% formfield player.major label="Your major" %}
+    {% next_button %}
+{% endblock %}

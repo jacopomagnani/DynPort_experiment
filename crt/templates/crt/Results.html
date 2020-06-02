@@ -1,0 +1,23 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Page title
+{% endblock %}
+
+{% block content %}
+    <p>
+    The right answers are:
+    <ol>
+        <li>2</li>
+        <li>20</li>
+        <li>9</li>
+    </ol>
+    </p>
+    <p>
+        You answered {{player.num_correct}} questions correctly. In this part you have earned: <b>{{player.payoff}}</b>.
+    </p>
+    {% next_button %}
+{% endblock %}
+
+

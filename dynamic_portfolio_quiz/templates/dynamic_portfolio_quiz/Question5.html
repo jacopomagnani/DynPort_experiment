@@ -1,0 +1,271 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Part 1, Question 5
+{% endblock %}
+
+{% block content %}
+
+    <p>Consider the example illustrated below.</p>
+
+    <div id="chart" align="center"></div>
+
+    <p>Suppose in the first period you invest in A an amount of wealth greater than your current wealth (X>100).</p>
+    {% formfield player.answer5 label="Choose the correct statement"%}
+
+    {% next_button %}
+
+{% endblock %}
+
+
+{% block scripts %}
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script>
+
+        d3.select("#chart")
+            .attr("align","center");
+
+
+        var T = {{num_periods|json}};
+        var num_periods = T+1;
+        var num_termnodes = 2**T;
+        var horizontal_margin = 20;
+        var vertical_margin = 20;
+        var box_width = 180;
+        var box_height = 70;
+        var termbox_width = 105;
+        var termbox_height = 62;
+        var box_horizontal_space = 100;
+        var termbox_vertical_space = 25;
+        var targetX, targetY;
+        var wealth_label;
+
+        var total_width = 2*horizontal_margin + T * (box_width + box_horizontal_space) + termbox_width;
+        var total_height = 2*vertical_margin + num_termnodes * (termbox_height+termbox_vertical_space);
+        var svgContainer = d3.select("#chart").append("svg").attr("width",total_width).attr("height",total_height);
+
+        var wealth = JSON.parse({{wealth|json}});
+        var stock = JSON.parse({{stock|json}});
+        var bond = JSON.parse({{bond|json}});
+        var states = JSON.parse({{realized_states|json}});
+        var prices = JSON.parse({{prices|json}});
+
+        <!--DEFINING ARROW MARKERS-->
+
+        svgContainer.append("svg:defs").append("svg:marker")
+            .attr("id", "tip")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "black");
+
+        svgContainer.append("svg:defs").append("svg:marker")
+            .attr("id", "redtip")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "red");
+
+        <!--TERMINAL NODES-->
+        targetX = horizontal_margin + (box_width + box_horizontal_space)*T;
+
+        for(i=1; i<num_termnodes+1; i++){
+
+            targetY = vertical_margin + (i-1)*(termbox_height+termbox_vertical_space);
+            wealth_label = "w_" + T + "_" + i;
+            price_label = "x_" + T + "_" + i;
+
+            if(i==states[T.toString()]){
+                var color = "red";
+            } else {
+                var color = "black";
+            };
+
+            svgContainer.append("rect")
+                .attr("x",targetX)
+                .attr("y",targetY)
+                .attr("width",termbox_width)
+                .attr("height",termbox_height)
+                .attr("ry",5)
+                .style("fill","white")
+                .style("stroke",color)
+                .style("stroke-width",1);
+
+            var fo = svgContainer.append("foreignObject")
+                .attr("x",targetX+1)
+                .attr("y",targetY+1)
+                .attr("width",termbox_width-5)
+                .attr("height",termbox_height-5);
+
+            var tab = fo.append("xhtml:table");
+            var row1 = tab.append("tr");
+            row1.append("td").html("Price_A: ");
+            row1.append("td").append("xhtml:input")
+                .attr("size",3)
+                .attr("value",prices[price_label])
+                .attr("readonly","readonly");
+            var row2 = tab.append("tr");
+            row2.append("td").html("Wealth: ");
+            row2.append("td").append("xhtml:input")
+                .attr("size",3)
+                .attr("id",wealth_label)
+                .attr("readonly","readonly")
+                .attr("value",wealth[wealth_label]);
+        }
+
+        <!--NON-TERMINAL NODES-->
+
+        for(k=1; k<T+1; k++){
+
+            var num_nodes = 2**(T-k);
+
+            var top_offset = vertical_margin + 2**(k-1) * (termbox_height + termbox_vertical_space) - (box_height + termbox_vertical_space)/2;
+            var box_vertical_distance = 2**k * (termbox_height+termbox_vertical_space)-box_height;
+
+            targetX = horizontal_margin + (box_width + box_horizontal_space)*(T-k);
+
+            for(i=1; i<num_nodes+1; i++){
+
+                wealth_label = "w_" + (T-k) + "_" + i;
+                stock_label = "s_" + (T-k) + "_" + i;
+                bond_label = "b_" + (T-k) + "_" + i;
+                price_label = "x_" + (T-k) + "_" + i;
+
+                targetY = top_offset + (i-1) * (box_height + box_vertical_distance);
+
+                if(i==states[(T-k).toString()]){
+                    var box_color = "red";
+                    if(states[(T-k+1).toString()]%2==0){
+                        var upline_color = "black";
+                        var downline_color = "red";
+                        var upline_marker = "url(#tip)";
+                        var downline_marker = "url(#redtip)"
+                    } else {
+                        var upline_color = "red";
+                        var downline_color = "black";
+                        var upline_marker = "url(#redtip)";
+                        var downline_marker = "url(#tip)"
+                    }
+                } else {
+                    var box_color = "black";
+                    var upline_color = "black";
+                    var downline_color = "black";
+                    var upline_marker = "url(#tip)";
+                    var downline_marker = "url(#tip)"
+                };
+
+                svgContainer.append("rect")
+                    .attr("x",targetX)
+                    .attr("y",targetY)
+                    .attr("width",box_width)
+                    .attr("height",box_height)
+                    .attr("ry",5)
+                    .style("fill","white")
+                    .style("stroke",box_color)
+                    .style("stroke-width",1);
+
+                var fo = svgContainer.append("foreignObject")
+                    .attr("x",targetX+1)
+                    .attr("y",targetY+5)
+                    .attr("width",box_width-5)
+                    .attr("height",box_height-5);
+                var tab = fo.append("xhtml:table");
+                var row1 = tab.append("tr");
+                row1.append("td").html("Price_A: ");
+                row1.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("value",prices[price_label])
+                    .attr("readonly","readonly");
+                row1.append("td").html("A: ");
+                row1.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",stock_label)
+                    .attr("value",stock[stock_label])
+                    .attr("readonly","readonly");
+                var row2 = tab.append("tr");
+                row2.append("td").html("Wealth:");
+                row2.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",wealth_label)
+                    .attr("readonly","readonly")
+                    .attr("value",wealth[wealth_label]);
+                row2.append("td").html("B: ");
+                row2.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",bond_label)
+                    .attr("value",bond[bond_label])
+                    .attr("readonly","readonly");
+
+                var line_start_X = targetX + box_width;
+                var line_start_Y = targetY + 0.5 * box_height;
+                var line_end_X = line_start_X + box_horizontal_space - 5;
+                if(k==1){
+                    var upline_end_Y = line_start_Y - 0.5 * (termbox_height + termbox_vertical_space);
+                    var downline_end_Y = line_start_Y + 0.5 * (termbox_height + termbox_vertical_space);
+                } else {
+                    var nextbox_vertical_distance = 2**(k-1) * (termbox_height+termbox_vertical_space)-box_height;
+                    var upline_end_Y = line_start_Y - 0.5 * (box_height + nextbox_vertical_distance);
+                    var downline_end_Y = line_start_Y + 0.5 * (box_height + nextbox_vertical_distance);
+                };
+                svgContainer.append("line")
+                    .attr("x1",line_start_X)
+                    .attr("y1",line_start_Y)
+                    .attr("x2",line_end_X)
+                    .attr("y2",upline_end_Y)
+                    .attr("stroke-width", 1)
+                    .attr("stroke", upline_color)
+                    .attr("marker-end", upline_marker);
+                svgContainer.append("line")
+                    .attr("x1",line_start_X)
+                    .attr("y1",line_start_Y)
+                    .attr("x2",line_end_X)
+                    .attr("y2",downline_end_Y)
+                    .attr("stroke-width", 1)
+                    .attr("stroke", downline_color)
+                    .attr("marker-end", downline_marker);
+
+            };
+
+        };
+
+    </script>
+{% endblock %}
+
+{% block styles %}
+    <style>
+        .otree-form-errors {
+            display: none;
+        }
+    </style>
+    <style>
+        input, body {
+          font-family: 'Helvetica', Arial, Lucida Grande, sans-serif;
+          font-size: 14px;
+        }
+        input{
+            width: 40px;
+        }
+        #s_0_1 {
+            background-color: orange;
+        }
+        #w_1_1 {
+            background-color: yellow;
+        }
+        #w_1_2 {
+            background-color: cyan;
+        }
+    </style>
+{% endblock %}

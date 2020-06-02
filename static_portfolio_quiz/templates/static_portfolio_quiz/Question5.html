@@ -1,0 +1,75 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+     Part 2, Question 5
+{% endblock %}
+
+{% block content %}
+    <p>Consider the example illustrated below.</p>
+
+    <div id="table1" align="center"></div>
+
+    <p>What is the probability the lottery highlighted in blue will be selected for payment?</p>
+    {% formfield player.answer5 label="Your answer"%}
+    {% next_button %}
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script>
+        var prices = JSON.parse({{prices|json}});
+        var quantities = JSON.parse({{quantities|json}});
+        var expenditures = JSON.parse({{expenditures|json}});
+        var table = d3.select("#table1").append("table");
+        var head = table.append("thead").append("tr");
+        head.append("td").html("Lottery");
+        head.append("td").html("Price");
+        head.append("td").html("Quantity");
+        head.append("td").html("Expenditure");
+        for(i=1; i<{{ num_states|json }}+1; i++){
+            price_label = "p_" + i;
+            security_label = "q_" + i;
+            expenditure_label = "e_" + i;
+            var row = table.append("tr");
+            if(i=={{realized_state|json}}){
+                row.attr("class", "realrow");
+            };
+            row.append("td").html(i);
+            var price = Math.round(prices[price_label]*10000)/100;
+            row.append("td").html(price);
+            row.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",security_label)
+                    .attr("readonly","readonly")
+                    .attr("value",quantities[security_label]);
+            var expenditure = expenditures[expenditure_label];
+            row.append("td").html(expenditure);
+        };
+        var bottom_row = table.append("tr");
+        bottom_row.append("td").attr("colspan","3").html("Total available wealth:");
+        bottom_row.append("td").html({{initial_wealth|json}});
+     </script>
+
+{% endblock %}
+
+
+{% block styles %}
+    <style>
+        .otree-form-errors {
+            display: none;
+        }
+        table, th, td {
+            border: 1px solid black;
+            text-align: center;
+        }
+        tr.realrow {background-color: lightblue;}
+        div {margin-top: 50px}
+        input{
+            width: 40px;
+        }
+    </style>
+{% endblock %}

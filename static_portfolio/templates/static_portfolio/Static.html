@@ -1,0 +1,138 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+        {% if session.vars.num_rounds == 1 %}
+         Task 2
+    {% else %}
+         Task 2 Round {{ subsession.round_number }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <p>Choose a quantity of each lottery to buy (prices are quoted per 100 units of each security).</p>
+
+
+    <div id="table1" align="center"></div>
+
+    {% next_button %}
+
+    <input type="hidden" name="static_securities" id="id_securities"/>
+    {{ form.static_securities.errors }}
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script>
+        var prices = JSON.parse({{subsession.static_prices|json}});
+        var table = d3.select("#table1").append("table");
+        var head = table.append("thead").append("tr");
+        head.append("td").html("Lottery");
+        head.append("td").html("Price");
+        head.append("td").html("Quantity");
+        head.append("td").html("Expenditure");
+        for(i=1; i<{{ num_states|json }}+1; i++){
+            price_label = "p_" + i;
+            security_label = "q_" + i;
+            expenditure_label = "e_" + i;
+            var row = table.append("tr");
+            row.append("td").html(i);
+            var price = Math.round(prices[price_label]*10000)/100;
+            row.append("td").html(price);
+            if(i=={{ num_states|json }}){
+                row.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",security_label)
+                    .attr("class","residual")
+                    .attr("type","number")
+                    .attr("min","0");
+            } else {
+                row.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",security_label)
+                    .attr("type","number")
+                    .attr("required","required")
+                    .attr("step","1")
+                    .attr("min","0");
+            };
+            row.append("td").append("xhtml:input")
+                    .attr("size",3)
+                    .attr("id",expenditure_label)
+                    .attr("class","expenditure")
+                    .attr("type","number")
+                    .attr("step","0.1");
+        };
+        var bottom_row = table.append("tr");
+        bottom_row.append("td").attr("colspan","3").html("Total available wealth:");
+        bottom_row.append("td").html({{Constants.initial_wealth|json}});
+     </script>
+
+    <script>
+    var prices = JSON.parse({{subsession.static_prices|json}});
+    $("input").on("keydown keyup", function() {
+        var securities_string = "{ ";
+        var tot_expenditure = 0;
+        for(i=1;i<{{ num_states|json }}+1; i++){
+            price_label = "p_" + i;
+            security_label = "#q_" + i;
+            expenditure_label = "#e_" + i;
+            var price = prices[price_label];
+            if(i=={{ num_states|json }}){
+                var residual = ( {{ Constants.initial_wealth|json }} - tot_expenditure )/price;
+                $(security_label).val(Math.round(residual));
+            }
+            var quantity = parseFloat($(security_label).val());
+            var expenditure = price * quantity;
+            $(expenditure_label).val(Math.round(10*expenditure)/10);
+            tot_expenditure = tot_expenditure + expenditure;
+            securities_string = securities_string + '"' + security_label.substr(1) + '":' + quantity;
+            if(i<{{ num_states|json }}){
+                securities_string = securities_string + ', ';
+            };
+        }
+        securities_string = securities_string + "}";
+        $("#id_securities").val(securities_string);
+    });
+    </script>
+
+
+    <script>
+        $(".residual").on('keydown paste', function(e){
+            e.preventDefault();
+        });
+
+        $(".expenditure").on('keydown paste', function(e){
+            e.preventDefault();
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+        $(window).keydown(function(event){
+        if(event.keyCode == 13) {
+          event.preventDefault();
+          return false;
+        }
+        });
+        });
+    </script>
+
+{% endblock %}
+
+
+{% block styles %}
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            text-align: center;
+        }
+        div {margin-top: 50px}
+        input{
+            width: 40px;
+        }
+    </style>
+{% endblock %}
+

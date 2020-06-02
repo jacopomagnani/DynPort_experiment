@@ -1,0 +1,23 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Practice Rounds
+{% endblock %}
+
+{% block content %}
+    <p>You will now practice the task for {{Constants.num_rounds}} rounds.</p>
+    <p>The points you earn in these rounds do not affect your final payment.</p>
+    {% next_button %}
+{% endblock %}
+
+
+{% block styles %}
+    <style>
+        input, body {
+          font-family: 'Helvetica', Arial, Lucida Grande, sans-serif;
+          font-size: 14px;
+        }
+    </style>
+{% endblock %}
+
